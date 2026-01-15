@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel表格数据校验工具</title>
+    <link rel="stylesheet" href="excel_validator.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Excel表格数据校验工具</h1>
+            <p>用于校验表61学生缺勤数据的格式和规范</p>
+            <div class="important-notice">
+                <strong>重要提示：</strong>以下字段必须从Excel文件中的下拉选项中选择：
+                <ul>
+                    <li>开课学期码（KKXQM）：1-秋季学期, 2-春季学期, 3-夏季学期, 9-其他</li>
+                    <li>缺勤类型（QQLX）：1-病假, 2-事假, 3-迟到早退, 4-旷课</li>
+                    <li>考勤类型（KQLX）：1-点名考勤, 2-签到考勤, 3-课堂互动考勤, 4-抽查考勤, 5-综合考勤, 9-其他</li>
+                </ul>
+            </div>
+        </header>
+
+        <main>
+            <!-- 上传区域 -->
+            <section class="upload-section">
+                <div class="upload-container">
+                    <div id="drop-area" class="drop-area">
+                        <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16"><path d="M.002 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3zm1 9v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12zm5-6.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0z"/></svg></div>
+                        <h3>拖放Excel文件到此处或</h3>
+                        <input type="file" id="file-input" accept=".xlsx, .xls" class="file-input">
+                        <label for="file-input" class="btn btn-primary">选择文件</label>
+                        <p class="hint">支持 .xlsx 和 .xls 格式文件</p>
+                    </div>
+                    <div class="file-info" id="file-info"></div>
+                </div>
+            </section>
+
+            <!-- 控制按钮区域 -->
+            <section class="controls-section">
+                <button id="validate-btn" class="btn btn-success" disabled>开始校验</button>
+                <button id="download-btn" class="btn btn-info" disabled>下载校验结果</button>
+                <button id="clear-btn" class="btn btn-secondary">清空数据</button>
+            </section>
+
+            <!-- 数据预览区域 -->
+            <section class="preview-section">
+                <h2>数据预览</h2>
+                <div class="table-container">
+                    <table id="data-table" class="data-table"></table>
+                </div>
+            </section>
+
+            <!-- 校验结果区域 -->
+            <section class="results-section">
+                <h2>校验结果</h2>
+                <div class="results-info">
+                    <div class="result-item">
+                        <span class="label">总记录数：</span>
+                        <span id="total-count">0</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="label">通过校验：</span>
+                        <span id="pass-count" class="status-pass">0</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="label">未通过校验：</span>
+                        <span id="fail-count" class="status-fail">0</span>
+                    </div>
+                </div>
+                
+                <div class="errors-container">
+                    <h3>错误详情</h3>
+                    <div id="errors-list" class="errors-list"></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 加载状态 -->
+        <div id="loading" class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p>正在处理，请稍候...</p>
+        </div>
+    </div>
+
+    <script src="excel_validator.js"></script>
+</body>
+</html>

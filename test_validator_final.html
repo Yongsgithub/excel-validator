@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel数据校验工具 - 测试版</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #555;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .test-data {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: #fff;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #f4f4f4;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin: 10px 0;
+        }
+        .result-summary {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .summary-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .field-test {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Excel数据校验工具 - 测试版</h1>
+        
+        <div class="test-section">
+            <h2>1. 生成测试数据</h2>
+            <button onclick="generateTestData()">生成有效测试数据</button>
+            <button onclick="generateInvalidData()">生成无效测试数据</button>
+            <button onclick="runFullTest()">完整测试流程</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. 测试数据预览</h2>
+            <div id="test-data-preview" class="test-data"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>3. 校验结果</h2>
+            <div id="validation-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>4. 控制台输出</h2>
+            <div id="console-output" class="console-output"></div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟控制台输出
+        const consoleOutput = document.getElementById('console-output');
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            consoleOutput.textContent += logEntry;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            console.log(message);
+        }
+        
+        // 清空控制台
+        function clearConsole() {
+            consoleOutput.textContent = '';
+        }
+        
+        // 生成测试数据
+        function generateTestData() {
+            clearConsole();
+            log('=== 生成有效测试数据 ===');
+            
+            // 创建测试数据 - 使用"代码-名称"格式
+            const testData = [
+                {
+                    'ZJSJWYXBS-主键数据唯一性标识': 'R001',
+                    'XXDM-学校代码': '10001',
+                    'XH-学号': '2023001',
+                    'KKXND-开课学年度': '2023-2024',
+                    'KKXQM-开课学期码': '1-秋季学期',
+                    'QQRQ-缺勤日期': '20250905',
+                    'QQLX-缺勤类型': '1-病假',
+                    'KQLX-考勤类型': '1-点名考勤',
+                    'QQYY-缺勤原因': '病假',
+                    'SPSJ-审批时间': '20250905',
+                    'SPR-审批人': '张老师',
+                    'SJCJSJ-数据采集时间': '20250905 080000'
+                },
+                {
+                    'ZJSJWYXBS-主键数据唯一性标识': 'R002',
+                    'XXDM-学校代码': '10001',
+                    'XH-学号': '2023002',
+                    'KKXND-开课学年度': '2023-2024',
+                    'KKXQM-开课学期码': '2-春季学期',
+                    'QQRQ-缺勤日期': '20250906',
+                    'QQLX-缺勤类型': '2-事假',
+                    'KQLX-考勤类型': '2-签到考勤',
+                    'QQYY-缺勤原因': '事假',
+                    'SPSJ-审批时间': '20250906',
+                    'SPR-审批人': '李老师',
+                    'SJCJSJ-数据采集时间': '20250906 090000'
+                },
+                {
+                    'ZJSJWYXBS-主键数据唯一性标识': 'R003',
+                    'XXDM-学校代码': '10002',
+                    'XH-学号': '2023003',
+                    'KKXND-开课学年度': '2023-2024',
+                    'KKXQM-开课学期码': '3-夏季学期',
+                    'QQRQ-缺勤日期': '20250907',
+                    'QQLX-缺勤类型': '3-迟到早退',
+                    'KQLX-考勤类型': '3-课堂互动考勤',
+                    'QQYY-缺勤原因': '迟到',
+                    'SPSJ-审批时间': '20250907',
+                    'SPR-审批人': '王老师',
+                    'SJCJSJ-数据采集时间': '20250907 100000'
+                }
+            ];
+            
+            log('生成的测试数据:');
+            log(JSON.stringify(testData, null, 2));
+            
+            // 保存到全局变量
+            window.testExcelData = testData;
+            
+            // 显示数据预览
+            displayDataPreview(testData);
+            
+            // 直接测试校验功能
+            validateTestData(testData);
+            
+            return testData;
+        }
+        
+        // 生成无效测试数据
+        function generateInvalidData() {
+            clearConsole();
+            log('=== 生成无效测试数据 ===');
+            
+            const testData = [
+                {
+                    'ZJSJWYXBS-主键数据唯一性标识': 'R001',
+                    'XXDM-学校代码': '10001',
+                    'XH-学号': '2023001',
+                    'KKXND-开课学年度': '2023-2024',
+                    'KKXQM-开课学期码': '1-秋季学期',
+                    'QQRQ-缺勤日期': '20250905',
+                    'QQLX-缺勤类型': '1-病假',
+                    'KQLX-考勤类型': '1-点名考勤',
+                    'QQYY-缺勤原因': '病假',
+                    'SPSJ-审批时间': '20250905',
+                    'SPR-审批人': '张老师',
+                    'SJCJSJ-数据采集时间': '20250905 080000'
+                },
+                {
+                    // 缺勤日期为空
+                    'ZJSJWYXBS-主键数据唯一性标识': 'R002',
+                    'XXDM-学校代码': '10001',
+                    'XH-学号': '2023002',
+                    'KKXND-开课学年度': '2023-2024',
+                    'KKXQM-开课学期码': '2-春季学期',
+                    'QQRQ-缺勤日期': '',
+                    'QQLX-缺勤类型': '2-事假',
+                    'KQLX-考勤类型': '2-签到考勤',
+                    'QQYY-缺勤原因': '事假',
+                    'SPSJ-审批时间': '20250906',
+                    'SPR-审批人': '李老师',
+                    'SJCJSJ-数据采集时间': '20250906 090000'
+                },
+                {
+                    // 缺勤类型无效
+                    'ZJSJWYXBS-主键数据唯一性标识': 'R003',
+                    'XXDM-学校代码': '10002',
+                    'XH-学号': '2023003',
+                    'KKXND-开课学年度': '2023-2024',
+                    'KKXQM-开课学期码': '3-夏季学期',
+                    'QQRQ-缺勤日期': '20250907',
+                    'QQLX-缺勤类型': '99-无效类型',  // 无效值
+                    'KQLX-考勤类型': '3-课堂互动考勤',
+                    'QQYY-缺勤原因': '迟到',
+                    'SPSJ-审批时间': '20250907',
+                    'SPR-审批人': '王老师',
+                    'SJCJSJ-数据采集时间': '20250907 100000'
+                }
+            ];
+            
+            log('生成的无效测试数据:');
+            log(JSON.stringify(testData, null, 2));
+            
+            window.testExcelData = testData;
+            displayDataPreview(testData);
+            validateTestData(testData);
+            
+            return testData;
+        }
+        
+        // 显示数据预览
+        function displayDataPreview(data) {
+            const previewDiv = document.getElementById('test-data-preview');
+            
+            if (!data || data.length === 0) {
+                previewDiv.innerHTML = '<p>没有测试数据</p>';
+                return;
+            }
+            
+            const headers = Object.keys(data[0]);
+            
+            let html = '<table><thead><tr>';
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            data.forEach(row => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${row[header] || ''}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            previewDiv.innerHTML = html;
+            
+            log(`显示数据预览: ${data.length} 行, ${headers.length} 列`);
+        }
+        
+        // 测试数据校验功能
+        function validateTestData(data) {
+            log('=== 开始校验测试数据 ===');
+            
+            if (!data || data.length === 0) {
+                log('错误: 没有测试数据可校验');
+                return;
+            }
+            
+            // 复制验证函数
+            function validateStudentId(studentId) {
+                const studentIdStr = String(studentId);
+                return studentIdStr.length >= 5 && studentIdStr.length <= 20;
+            }
+            
+            function validateDateFormat(date) {
+                let dateStr;
+                if (date instanceof Date) {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    dateStr = `${year}${month}${day}`;
+                } else if (typeof date === 'number') {
+                    if (date > 0 && date < 700000) {
+                        const excelDate = new Date((date - 25569) * 86400 * 1000);
+                        const year = excelDate.getFullYear();
+                        const month = String(excelDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(excelDate.getDate()).padStart(2, '0');
+                        dateStr = `${year}${month}${day}`;
+                    } else {
+                        dateStr = String(date);
+                    }
+                } else {
+                    dateStr = String(date);
+                }
+                return /^\d{8}$/.test(dateStr);
+            }
+            
+            function validateDateConsistency(qqrq, spsj) {
+                function toYYYYMMDD(date) {
+                    let dateStr;
+                    if (date instanceof Date) {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        dateStr = `${year}${month}${day}`;
+                    } else if (typeof date === 'number') {
+                        if (date > 0 && date < 700000) {
+                            const excelDate = new Date((date - 25569) * 86400 * 1000);
+                            const year = excelDate.getFullYear();
+                            const month = String(excelDate.getMonth() + 1).padStart(2, '0');
+                            const day = String(excelDate.getDate()).padStart(2, '0');
+                            dateStr = `${year}${month}${day}`;
+                        } else {
+                            dateStr = String(date).substr(0, 8);
+                        }
+                    } else {
+                        dateStr = String(date).substr(0, 8);
+                    }
+                    return dateStr;
+                }
+                return toYYYYMMDD(qqrq) === toYYYYMMDD(spsj);
+            }
+            
+            function validateSemesterCode(code) {
+                const codeStr = String(code).trim();
+                const validCodes = ['1', '2', '3', '9'];
+                const validPatterns = ['1-秋季学期', '2-春季学期', '3-夏季学期', '9-其他'];
+                return validCodes.includes(codeStr) || validPatterns.includes(codeStr);
+            }
+            
+            function validateAbsenceType(type) {
+                const typeStr = String(type).trim();
+                const validTypes = ['1', '2', '3', '4'];
+                const validPatterns = ['1-病假', '2-事假', '3-迟到早退', '4-旷课'];
+                return validTypes.includes(typeStr) || validPatterns.includes(typeStr);
+            }
+            
+            function validateAttendanceType(type) {
+                const typeStr = String(type).trim();
+                const validTypes = ['1', '2', '3', '4', '5', '9'];
+                const validPatterns = ['1-点名考勤', '2-签到考勤', '3-课堂互动考勤', '4-抽查考勤', '5-综合考勤', '9-其他'];
+                return validTypes.includes(typeStr) || validPatterns.includes(typeStr);
+            }
+            
+            // 辅助函数：获取字段值
+            function getFieldValue(row, fieldNames) {
+                for (const name of fieldNames) {
+                    if (row.hasOwnProperty(name)) {
+                        return row[name];
+                    }
+                }
+                // 尝试模糊匹配
+                for (const key in row) {
+                    const lowercaseKey = key.toLowerCase().replace(/[-_]/g, '');
+                    for (const name of fieldNames) {
+                        const lowercaseName = name.toLowerCase().replace(/[-_]/g, '');
+                        if (lowercaseKey.includes(lowercaseName)) {
+                            return row[key];
+                        }
+                    }
+                }
+                return '';
+            }
+            
+            // 校验每行数据
+            const results = [];
+            let passed = 0;
+            let failed = 0;
+            
+            data.forEach((row, index) => {
+                const rowNum = index + 1;
+                log(`\n--- 校验第 ${rowNum} 行 ---`);
+                log(`原始数据: ${JSON.stringify(row)}`);
+                
+                const errors = [];
+                
+                // 1. 校验学号
+                const xhValue = getFieldValue(row, ['XH-学号', '学号', 'XH', 'xh']);
+                log(`学号: "${xhValue}" (类型: ${typeof xhValue})`);
+                if (!xhValue) {
+                    errors.push(`学号不能为空`);
+                } else if (!validateStudentId(xhValue)) {
+                    errors.push(`学号格式不正确`);
+                }
+                
+                // 2. 校验缺勤日期
+                const qqrq = getFieldValue(row, ['QQRQ-缺勤日期', '缺勤日期', 'QQRQ', 'qqrq']);
+                log(`缺勤日期: "${qqrq}" (类型: ${typeof qqrq})`);
+                if (!qqrq) {
+                    errors.push(`缺勤日期不能为空`);
+                } else if (!validateDateFormat(qqrq)) {
+                    errors.push(`缺勤日期格式不正确 (期望YYYYMMDD)`);
+                }
+                
+                // 3. 校验审批时间
+                const spsj = getFieldValue(row, ['SPSJ-审批时间', '审批时间', 'SPSJ', 'spsj']);
+                log(`审批时间: "${spsj}" (类型: ${typeof spsj})`);
+                if (!spsj) {
+                    errors.push(`审批时间不能为空`);
+                } else if (!validateDateFormat(spsj)) {
+                    errors.push(`审批时间格式不正确 (期望YYYYMMDD)`);
+                } else if (qqrq && validateDateFormat(qqrq) && !validateDateConsistency(qqrq, spsj)) {
+                    errors.push(`缺勤时间与审批时间不一致`);
+                }
+                
+                // 4. 校验开课学期码
+                const kkxqm = getFieldValue(row, ['KKXQM-开课学期码', '开课学期码', 'KKXQM', 'kkxqm']);
+                log(`开课学期码: "${kkxqm}" (类型: ${typeof kkxqm})`);
+                if (!kkxqm) {
+                    errors.push(`开课学期码不能为空`);
+                } else if (!validateSemesterCode(kkxqm)) {
+                    errors.push(`开课学期码必须为1-秋季学期/2-春季学期/3-夏季学期/9-其他`);
+                }
+                
+                // 5. 校验缺勤类型
+                const qqlx = getFieldValue(row, ['QQLX-缺勤类型', '缺勤类型', 'QQLX', 'qqlx']);
+                log(`缺勤类型: "${qqlx}" (类型: ${typeof qqlx})`);
+                if (!qqlx) {
+                    errors.push(`缺勤类型不能为空`);
+                } else if (!validateAbsenceType(qqlx)) {
+                    errors.push(`缺勤类型必须为1-病假/2-事假/3-迟到早退/4-旷课`);
+                }
+                
+                // 6. 校验考勤类型
+                const kqlx = getFieldValue(row, ['KQLX-考勤类型', '考勤类型', 'KQLX', 'kqlx']);
+                log(`考勤类型: "${kqlx}" (类型: ${typeof kqlx})`);
+                if (!kqlx) {
+                    errors.push(`考勤类型不能为空`);
+                } else if (!validateAttendanceType(kqlx)) {
+                    errors.push(`考勤类型必须为1-点名考勤/2-签到考勤/3-课堂互动考勤/4-抽查考勤/5-综合考勤/9-其他`);
+                }
+                
+                if (errors.length > 0) {
+                    failed++;
+                    results.push({
+                        row: rowNum,
+                        status: 'fail',
+                        errors: errors
+                    });
+                    log(`❌ 校验失败: ${errors.join(', ')}`);
+                } else {
+                    passed++;
+                    results.push({
+                        row: rowNum,
+                        status: 'pass'
+                    });
+                    log(`✅ 校验通过`);
+                }
+            });
+            
+            // 显示结果
+            displayValidationResults(passed, failed, results);
+            
+            return { passed, failed, results };
+        }
+        
+        // 显示校验结果
+        function displayValidationResults(passed, failed, results) {
+            const resultsDiv = document.getElementById('validation-results');
+            
+            const total = passed + failed;
+            
+            let html = `
+                <div class="result-summary ${failed === 0 ? 'pass' : 'fail'}">
+                    <div class="summary-header">校验结果汇总</div>
+                    <p>总记录数: ${total}</p>
+                    <p>通过: ${passed}</p>
+                    <p>失败: ${failed}</p>
+                </div>
+            `;
+            
+            if (failed > 0) {
+                html += '<h3>错误详情</h3>';
+                results.forEach(result => {
+                    if (result.status === 'fail') {
+                        html += `
+                            <div class="field-test fail">
+                                <strong>第 ${result.row} 行</strong><br>
+                                错误: ${result.errors.join('<br>')}
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
+            resultsDiv.innerHTML = html;
+            log(`\n=== 校验完成 ===`);
+            log(`通过: ${passed}/${total}`);
+            log(`失败: ${failed}/${total}`);
+        }
+        
+        // 完整测试流程
+        function runFullTest() {
+            clearConsole();
+            log('=== 完整测试流程 ===\n');
+            
+            // 测试1: 有效数据
+            log('【测试1】有效数据校验');
+            const validData = generateTestData();
+            
+            // 测试2: 无效数据
+            log('\n【测试2】无效数据校验');
+            const invalidData = generateInvalidData();
+            
+            // 测试3: Excel文件导出和导入
+            log('\n【测试3】Excel文件导出和导入');
+            testExcelExport();
+        }
+        
+        // 测试Excel导出功能
+        function testExcelExport() {
+            const testData = [
+                {
+                    'ZJSJWYXBS-主键数据唯一性标识': 'R001',
+                    'XXDM-学校代码': '10001',
+                    'XH-学号': '2023001',
+                    'KKXND-开课学年度': '2023-2024',
+                    'KKXQM-开课学期码': '1-秋季学期',
+                    'QQRQ-缺勤日期': '20250905',
+                    'QQLX-缺勤类型': '1-病假',
+                    'KQLX-考勤类型': '1-点名考勤',
+                    'QQYY-缺勤原因': '病假',
+                    'SPSJ-审批时间': '20250905',
+                    'SPR-审批人': '张老师',
+                    'SJCJSJ-数据采集时间': '20250905 080000'
+                },
+                {
+                    'ZJSJWYXBS-主键数据唯一性标识': 'R002',
+                    'XXDM-学校代码': '10001',
+                    'XH-学号': '2023002',
+                    'KKXND-开课学年度': '2023-2024',
+                    'KKXQM-开课学期码': '2-春季学期',
+                    'QQRQ-缺勤日期': '20250906',
+                    'QQLX-缺勤类型': '2-事假',
+                    'KQLX-考勤类型': '2-签到考勤',
+                    'QQYY-缺勤原因': '事假',
+                    'SPSJ-审批时间': '20250906',
+                    'SPR-审批人': '李老师',
+                    'SJCJSJ-数据采集时间': '20250906 090000'
+                }
+            ];
+            
+            // 创建工作表
+            const worksheet = XLSX.utils.json_to_sheet(testData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, '数据列表');
+            
+            // 导出Excel文件
+            const filename = 'test_data.xlsx';
+            XLSX.writeFile(workbook, filename);
+            
+            log(`Excel文件已导出: ${filename}`);
+            log('请下载并使用主校验工具验证此文件');
+            
+            // 同时测试读取导出的文件
+            log('\n测试读取导出的Excel文件...');
+            
+            // 创建Blob并读取
+            const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([wbout], { type: 'application/octet-stream' });
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook2 = XLSX.read(data, { type: 'array' });
+                const worksheet2 = workbook2.Sheets[workbook2.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet2);
+                
+                log(`成功读取Excel文件，共 ${jsonData.length} 行数据`);
+                log(`第一行数据: ${JSON.stringify(jsonData[0])}`);
+                
+                // 校验读取的数据
+                log('\n校验从Excel读取的数据...');
+                validateTestData(jsonData);
+            };
+            reader.readAsArrayBuffer(blob);
+        }
+        
+        // 页面加载时运行测试
+        window.onload = function() {
+            log('页面加载完成，准备测试...');
+            setTimeout(runFullTest, 500);
+        };
+    </script>
+</body>
+</html>
